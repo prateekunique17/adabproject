@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio · Instrument Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body { --accent: #00e5c0; --accent-glow: rgba(0,229,192,0.10); }
+
+    .studio-card {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 16px auto;
+      background: rgba(18,18,26,0.7);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+    }
+
+    .big-timer {
+      font-family: 'Space Mono', monospace;
+      font-size: 4rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+      margin: 24px 0;
+      letter-spacing: 4px;
+      line-height: 1;
+    }
+
+    .studio-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .big-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      border: 1.5px solid;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .big-btn.rec { border-color: rgba(255,60,110,0.5); color: #ff6b90; background: rgba(255,60,110,0.06); }
+    .big-btn.rec:hover { background: rgba(255,60,110,0.12); }
+    .big-btn.rec.recording { background: rgba(255,60,110,0.18); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    .big-btn.post-btn { border-color: rgba(0,229,192,0.5); color: #00e5c0; background: rgba(0,229,192,0.06); }
+    .big-btn.post-btn:hover { background: rgba(0,229,192,0.12); }
+
+    .big-btn.clear-btn { border-color: var(--border); color: var(--muted); background: transparent; }
+    .big-btn.clear-btn:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+
+    .track-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .track-events {
+      display: flex;
+      gap: 5px;
+      min-height: 48px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .track-event {
+      padding: 4px 10px;
+      border-radius: 5px;
+      background: rgba(0,229,192,0.1);
+      color: #00e5c0;
+      border: 1px solid rgba(0,229,192,0.2);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      animation: pop 0.15s ease;
+    }
+    @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .instrument-tip {
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .instrument-tip a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(0,229,192,0.3);
+    }
+
+    /* All posts feed */
+    .all-posts {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 32px 60px;
+    }
+
+    .all-posts h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      border-color: rgba(0,229,192,0.4);
+      color: #00e5c0;
+      background: rgba(0,229,192,0.06);
+    }
+
+    .posts-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .full-post-card {
+      background: rgba(18,18,26,0.8);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      transition: border-color 0.2s;
+    }
+    .full-post-card:hover { border-color: rgba(255,255,255,0.12); }
+
+    .fpc-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .fpc-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .fpc-info { flex: 1; min-width: 0; }
+    .fpc-title { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+    .fpc-meta { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--muted); }
+    .fpc-desc { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+
+    .fpc-wave {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      height: 36px;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+    .fpc-wave span {
+      display: inline-block;
+      width: 3px;
+      border-radius: 2px;
+      background: rgba(0,229,192,0.3);
+    }
+
+    .fpc-seq {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .fpc-seq-key {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--muted);
+    }
+
+    .fpc-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .fpc-play, .fpc-like, .fpc-delete {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      padding: 7px 14px;
+      border-radius: 7px;
+      border: 1px solid;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+    }
+
+    .fpc-play { border-color: rgba(0,229,192,0.3); color: #00e5c0; }
+    .fpc-play:hover { background: rgba(0,229,192,0.08); }
+    .fpc-like { border-color: var(--border); color: var(--muted); }
+    .fpc-like:hover { border-color: rgba(255,60,110,0.3); color: #ff6b90; }
+    .fpc-like.liked { border-color: rgba(255,60,110,0.4); color: #ff3c6e; background: rgba(255,60,110,0.08); }
+    .fpc-delete { border-color: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); margin-left: auto; }
+    .fpc-delete:hover { border-color: rgba(255,60,110,0.2); color: rgba(255,60,110,0.5); }
+  </style>
+</head>
+<body data-instrument="studio" data-emoji="🎙️">
+  <div class="glow"></div>
+
+  <nav>
+    <a class="logo" href="./home.html">◎ Instrument Playground</a>
+    <ul class="nav-links">
+      <li><a href="./home.html">Home</a></li>
+      <li><a href="./index (2).html">Drums</a></li>
+      <li><a href="./piano.html">Piano</a></li>
+      <li><a href="./guitar.html">Guitar</a></li>
+      <li><a href="./synth.html">Synth</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-hero">
+    <span class="page-tag">Instrument Playground</span>
+    <h1>Studio 🎙️</h1>
+    <p>Record from any page · Build your sequence · Share with the community</p>
+  </header>
+
+  <div class="studio-card">
+    <div class="big-timer" id="bigTimer">00:00</div>
+
+    <div class="studio-actions">
+      <button class="big-btn rec" id="bigRecBtn">● Record</button>
+      <button class="big-btn post-btn" id="bigPostBtn">↑ Post to Feed</button>
+      <button class="big-btn clear-btn" id="bigClearBtn">✕ Clear</button>
+    </div>
+
+    <div class="track-label">Recorded Sequence</div>
+    <div class="track-events" id="studioTrack">
+      <span style="font-family:'Space Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.15);">— press Record then play any key —</span>
+    </div>
+
+    <p class="instrument-tip">
+      Go to <a href="./index (2).html">Drums</a>, <a href="./piano.html">Piano</a>, <a href="./guitar.html">Guitar</a>, or <a href="./synth.html">Synth</a> to record while playing.
+      Your sequence is shared across all pages.
+    </p>
+  </div>
+
+  <!-- Full Community Feed -->
+  <div class="all-posts">
+    <h2>
+      Community Feed
+      <span style="font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:400;color:var(--muted);" id="postCount"></span>
+    </h2>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="drums">🥁 Drums</button>
+      <button class="filter-btn" data-filter="piano">🎹 Piano</button>
+      <button class="filter-btn" data-filter="guitar">🎸 Guitar</button>
+      <button class="filter-btn" data-filter="synth">🎛️ Synth</button>
+    </div>
+
+    <div class="posts-list" id="fullFeedList"></div>
+  </div>
+
+  <!-- Post Modal -->
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <h3>🎙️ Share Your Creation</h3>
+      <input type="hidden" id="postInstrument" value="studio">
+      <input type="hidden" id="postEmoji" value="🎵">
+      <label>Title</label>
+      <input type="text" id="postTitle" placeholder="My jam...">
+      <label>Your Name</label>
+      <input type="text" id="postAuthor" placeholder="Your name">
+      <label>Instrument</label>
+      <select id="postInstrumentSelect">
+        <option value="drums">🥁 Drums</option>
+        <option value="piano">🎹 Piano</option>
+        <option value="guitar">🎸 Guitar</option>
+        <option value="synth">🎛️ Synth</option>
+        <option value="studio">🎵 Mixed</option>
+      </select>
+      <label>Description (optional)</label>
+      <textarea id="postDesc" placeholder="Tell us about it..."></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePostModal()">Cancel</button>
+        <button class="btn-post" onclick="submitStudioPost()">Post It ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Efforts by Adab, Harshit and Jatin</span>
+    <span>Instrument Playground</span>
+  </footer>
+
+  <script>
+    // Studio doesn't play sounds itself — it manages the shared state
+    function makeSound() {}
+
+    // Override shared.js renderFeed with studio version
+    var currentFilter = 'all';
+
+    function renderFullFeed() {
+      const list = document.getElementById('fullFeedList');
+      const countEl = document.getElementById('postCount');
+      if (!list) return;
+
+      const posts = AppState.posts.filter(p =>
+        currentFilter === 'all' || p.instrument === currentFilter
+      );
+
+      if (countEl) countEl.textContent = `${posts.length} posts`;
+
+      if (posts.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:40px;font-family:'Space Mono',monospace;font-size:0.8rem;color:var(--muted);">No posts yet — be the first!</div>`;
+        return;
+      }
+
+      list.innerHTML = posts.map(post => {
+        const wave = Array.from({length: 60}, () => Math.floor(Math.random() * 28 + 6));
+        const seq = (post.sequence || []).slice(0, 20);
+        const emojiMap = { drums:'🥁', piano:'🎹', guitar:'🎸', synth:'🎛️', studio:'🎵' };
+        const emoji = post.emoji || emojiMap[post.instrument] || '🎵';
+        return `
+        <div class="full-post-card" id="post-${post.id}">
+          <div class="fpc-top">
+            <div class="fpc-avatar">${emoji}</div>
+            <div class="fpc-info">
+              <div class="fpc-title">${escHtml(post.title)}</div>
+              <div class="fpc-meta">by ${escHtml(post.author)} · ${post.instrument} · ${timeAgo(post.time)}</div>
+              ${post.desc ? `<div class="fpc-desc">${escHtml(post.desc)}</div>` : ''}
+            </div>
+          </div>
+          <div class="fpc-wave">
+            ${wave.map(h => `<span style="height:${h}px"></span>`).join('')}
+          </div>
+          ${seq.length > 0 ? `<div class="fpc-seq">${seq.map(k => `<span class="fpc-seq-key">${k}</span>`).join('')}${post.sequence.length > 20 ? `<span class="fpc-seq-key">+${post.sequence.length-20}</span>` : ''}</div>` : ''}
+          <div class="fpc-actions">
+            <button class="fpc-play" onclick="playPostSequence(${post.id})">▶ Play</button>
+            <button class="fpc-like ${isLiked(post.id) ? 'liked' : ''}" onclick="toggleLike(${post.id}, this)">♥ ${post.likes}</button>
+            <button class="fpc-delete" onclick="deletePost(${post.id})" title="Delete">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function deletePost(id) {
+      AppState.posts = AppState.posts.filter(p => p.id !== id);
+      savePosts();
+      renderFullFeed();
+    }
+
+    function submitStudioPost() {
+      const instrSel = document.getElementById('postInstrumentSelect');
+      document.getElementById('postInstrument').value = instrSel ? instrSel.value : 'studio';
+      const emojiMap = { drums:'🥁', piano:'🎹', guitar:'🎸', synth:'🎛️', studio:'🎵' };
+      document.getElementById('postEmoji').value = emojiMap[instrSel.value] || '🎵';
+      submitPost();
+      renderFullFeed();
+    }
+
+    // Filters
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.filter;
+        renderFullFeed();
+      });
+    });
+
+    // Studio rec controls
+    document.getElementById('bigRecBtn').addEventListener('click', function() {
+      if (AppState.recording) {
+        stopRecording();
+        this.classList.remove('recording');
+        this.textContent = '● Record';
+      } else {
+        startRecording();
+        this.classList.add('recording');
+        this.textContent = '■ Stop';
+      }
+    });
+
+    document.getElementById('bigPostBtn').addEventListener('click', function() {
+      openPostModal('studio', '🎵');
+    });
+
+    document.getElementById('bigClearBtn').addEventListener('click', function() {
+      AppState.sequence = [];
+      AppState.recSeconds = 0;
+      document.getElementById('bigTimer').textContent = '00:00';
+      const track = document.getElementById('studioTrack');
+      track.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.15);">— press Record then play any key —</span>`;
+    });
+
+    // Override update seq strip for studio
+    function updateSeqStrip() {
+      const track = document.getElementById('studioTrack');
+      if (!track) return;
+      if (!AppState.sequence || AppState.sequence.length === 0) {
+        track.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.15);">— press Record then play any key —</span>`;
+        return;
+      }
+      track.innerHTML = AppState.sequence.slice(-50).map(k =>
+        `<span class="track-event">${k}</span>`
+      ).join('');
+    }
+
+    // Override renderFeed
+    function renderFeed() { renderFullFeed(); }
+
+    // Timer display
+    setInterval(() => {
+      if (AppState.recording) {
+        document.getElementById('bigTimer').textContent = formatTime(AppState.recSeconds);
+      }
+    }, 500);
+  </script>
+  <script src="./shared.js"></script>
+  <script>
+    // After shared.js loads, init studio view
+    document.addEventListener('DOMContentLoaded', () => {
+      renderFullFeed();
+      updateSeqStrip();
+    });
+  </script>
+</body>
+</html>

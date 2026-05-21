@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piano Zone · Instrument Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body { --accent: #a78bfa; --accent-glow: rgba(167,139,250,0.12); }
+    .piano-set { gap: 4px; }
+  </style>
+</head>
+<body data-instrument="piano" data-emoji="🎹">
+  <div class="glow"></div>
+
+  <nav>
+    <a class="logo" href="./home.html">◎ Instrument Playground</a>
+    <ul class="nav-links">
+      <li><a href="./home.html">Home</a></li>
+      <li><a href="./index (2).html">Drums</a></li>
+      <li><a href="./piano.html" class="active">Piano</a></li>
+      <li><a href="./guitar.html">Guitar</a></li>
+      <li><a href="./synth.html">Synth</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-hero">
+    <span class="page-tag">Instrument Playground</span>
+    <h1>Piano Zone 🎹</h1>
+    <p>Click keys or press &nbsp;q e r t y u i</p>
+  </header>
+
+  <div class="controls-bar">
+    <button class="ctrl-btn record">● REC</button>
+    <span class="rec-timer">00:00</span>
+    <button class="ctrl-btn post">↑ Post to Feed</button>
+  </div>
+
+  <div class="sequence-strip">
+    <div class="sequence-events">
+      <span class="seq-empty">— play something to record —</span>
+    </div>
+  </div>
+
+  <section class="instrument-card">
+    <div class="set piano-set">
+      <button class="q piano" data-key="q" data-note="C4">q</button>
+      <button class="e piano" data-key="e" data-note="D4">e</button>
+      <button class="r piano" data-key="r" data-note="E4">r</button>
+      <button class="t piano" data-key="t" data-note="F4">t</button>
+      <button class="y piano" data-key="y" data-note="G4">y</button>
+      <button class="u piano" data-key="u" data-note="A4">u</button>
+      <button class="i piano" data-key="i" data-note="B4">i</button>
+    </div>
+  </section>
+
+  <div class="feed-section">
+    <div class="feed-header">Community Feed <span class="feed-count" id="feedCount">0</span></div>
+    <div class="feed-list" id="feedList"></div>
+  </div>
+
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <h3>🎹 Share Your Melody</h3>
+      <input type="hidden" id="postInstrument">
+      <input type="hidden" id="postEmoji">
+      <label>Title</label>
+      <input type="text" id="postTitle" placeholder="Moonlight vibes...">
+      <label>Your Name</label>
+      <input type="text" id="postAuthor" placeholder="Yashika">
+      <label>Description (optional)</label>
+      <textarea id="postDesc" placeholder="What did you make?"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePostModal()">Cancel</button>
+        <button class="btn-post" onclick="submitPost()">Post It ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Efforts by Adab, Harshit, Yashika and Jatin</span>
+    <span>Instrument Playground</span>
+  </footer>
+
+  <script>
+    var audioContext;
+    var pianoNotes = { q: 261.63, e: 293.66, r: 329.63, t: 349.23, y: 392.0, u: 440.0, i: 493.88 };
+
+    function makeSound(key) {
+      if (!pianoNotes[key]) return;
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = audioContext;
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(pianoNotes[key], now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.3, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 0.7);
+    }
+  </script>
+  <script src="./shared.js"></script>
+</body>
+</html>

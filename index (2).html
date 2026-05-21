@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drum Zone · Instrument Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body { --accent: #ff3c6e; --accent-glow: rgba(255,60,110,0.12); }
+
+    .drum {
+      background-color: rgba(255,255,255,0.04);
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: 14px;
+      gap: 4px;
+    }
+
+    .pad-w  { border-top: 3px solid #ff3c6e; }
+    .pad-a  { border-top: 3px solid #ff6e3c; }
+    .pad-s  { border-top: 3px solid #ffb03c; }
+    .pad-d  { border-top: 3px solid #ffe03c; }
+    .pad-j  { border-top: 3px solid #3cffa0; }
+    .pad-k  { border-top: 3px solid #3cd4ff; }
+    .pad-l  { border-top: 3px solid #a078ff; }
+  </style>
+</head>
+<body data-instrument="drums" data-emoji="🥁">
+  <div class="glow"></div>
+
+  <nav>
+    <a class="logo" href="./home.html">◎ Instrument Playground</a>
+    <ul class="nav-links">
+      <li><a href="./home.html">Home</a></li>
+      <li><a href="./index (2).html" class="active">Drums</a></li>
+      <li><a href="./piano.html">Piano</a></li>
+      <li><a href="./guitar.html">Guitar</a></li>
+      <li><a href="./synth.html">Synth</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-hero">
+    <span class="page-tag">Instrument Playground</span>
+    <h1>Drum Zone 🥁</h1>
+    <p>Click pads or press &nbsp;w a s d j k l</p>
+  </header>
+
+  <!-- Record controls -->
+  <div class="controls-bar">
+    <button class="ctrl-btn record">● REC</button>
+    <span class="rec-timer">00:00</span>
+    <button class="ctrl-btn post">↑ Post to Feed</button>
+  </div>
+
+  <!-- Sequence strip -->
+  <div class="sequence-strip">
+    <div class="sequence-events">
+      <span class="seq-empty">— play something to record —</span>
+    </div>
+  </div>
+
+  <!-- Drum pads -->
+  <section class="instrument-card">
+    <div class="set">
+      <button class="w drum pad-w" data-key="w">
+        <span class="key-label">W</span>
+        <span class="pad-name">TOM 1</span>
+      </button>
+      <button class="a drum pad-a" data-key="a">
+        <span class="key-label">A</span>
+        <span class="pad-name">TOM 2</span>
+      </button>
+      <button class="s drum pad-s" data-key="s">
+        <span class="key-label">S</span>
+        <span class="pad-name">TOM 3</span>
+      </button>
+      <button class="d drum pad-d" data-key="d">
+        <span class="key-label">D</span>
+        <span class="pad-name">TOM 4</span>
+      </button>
+      <button class="j drum pad-j" data-key="j">
+        <span class="key-label">J</span>
+        <span class="pad-name">SNARE</span>
+      </button>
+      <button class="k drum pad-k" data-key="k">
+        <span class="key-label">K</span>
+        <span class="pad-name">CRASH</span>
+      </button>
+      <button class="l drum pad-l" data-key="l">
+        <span class="key-label">L</span>
+        <span class="pad-name">KICK</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Community Feed -->
+  <div class="feed-section">
+    <div class="feed-header">
+      Community Feed <span class="feed-count" id="feedCount">0</span>
+    </div>
+    <div class="feed-list" id="feedList"></div>
+  </div>
+
+  <!-- Post Modal -->
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <h3>🥁 Share Your Beat</h3>
+      <input type="hidden" id="postInstrument">
+      <input type="hidden" id="postEmoji">
+      <label>Title</label>
+      <input type="text" id="postTitle" placeholder="My sick groove...">
+      <label>Your Name</label>
+      <input type="text" id="postAuthor" placeholder="Harshit">
+      <label>Description (optional)</label>
+      <textarea id="postDesc" placeholder="What did you make?"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePostModal()">Cancel</button>
+        <button class="btn-post" onclick="submitPost()">Post It ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Efforts by Adab, Harshit and Yashika</span>
+    <span>Instrument Playground</span>
+  </footer>
+
+  <script>
+    var audioCtx;
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    // Synthesize drum sounds using Web Audio
+    function playDrum(type) {
+      const ctx = getAudioCtx();
+      const now = ctx.currentTime;
+
+      if (type === 'kick') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.5);
+        gain.gain.setValueAtTime(1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
+      }
+      else if (type === 'snare') {
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const gain = ctx.createGain();
+        const filt = ctx.createBiquadFilter();
+        filt.type = 'highpass'; filt.frequency.value = 1000;
+        src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.8, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        src.start(now);
+      }
+      else if (type === 'crash') {
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 1.2, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const gain = ctx.createGain();
+        const filt = ctx.createBiquadFilter();
+        filt.type = 'highpass'; filt.frequency.value = 6000;
+        src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        src.start(now);
+      }
+      else if (type.startsWith('tom')) {
+        const freq = { tom1: 200, tom2: 160, tom3: 130, tom4: 100 }[type] || 150;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.4, now + 0.3);
+        gain.gain.setValueAtTime(0.9, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.start(now); osc.stop(now + 0.3);
+      }
+    }
+
+    function makeSound(key) {
+      switch(key) {
+        case 'w': playDrum('tom1'); break;
+        case 'a': playDrum('tom2'); break;
+        case 's': playDrum('tom3'); break;
+        case 'd': playDrum('tom4'); break;
+        case 'j': playDrum('snare'); break;
+        case 'k': playDrum('crash'); break;
+        case 'l': playDrum('kick'); break;
+      }
+    }
+  </script>
+  <script src="./shared.js"></script>
+</body>
+</html>

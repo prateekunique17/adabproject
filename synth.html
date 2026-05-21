@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synth Zone · Instrument Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body { --accent: #a78bfa; --accent-glow: rgba(167,139,250,0.12); }
+
+    .synth-controls {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto 20px;
+      padding: 0 32px;
+    }
+
+    .synth-controls-inner {
+      background: rgba(18,18,26,0.7);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      display: flex;
+      gap: 28px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .knob-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 110px;
+    }
+
+    .knob-group label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .knob-group label span {
+      color: #a78bfa;
+    }
+
+    .knob-group input[type=range] {
+      width: 100%;
+      accent-color: #a78bfa;
+      height: 3px;
+    }
+
+    .wave-picker {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .wave-opt {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .wave-opt.active, .wave-opt:hover {
+      border-color: rgba(167,139,250,0.5);
+      color: #c4b5fd;
+      background: rgba(167,139,250,0.08);
+    }
+  </style>
+</head>
+<body data-instrument="synth" data-emoji="🎛️">
+  <div class="glow"></div>
+
+  <nav>
+    <a class="logo" href="./home.html">◎ Instrument Playground</a>
+    <ul class="nav-links">
+      <li><a href="./home.html">Home</a></li>
+      <li><a href="./index (2).html">Drums</a></li>
+      <li><a href="./piano.html">Piano</a></li>
+      <li><a href="./guitar.html">Guitar</a></li>
+      <li><a href="./synth.html" class="active">Synth</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-hero">
+    <span class="page-tag">Instrument Playground</span>
+    <h1>Synth Zone 🎛️</h1>
+    <p>Click keys or press &nbsp;1 2 3 4 5 6 7</p>
+  </header>
+
+  <!-- Synth Controls -->
+  <div class="synth-controls">
+    <div class="synth-controls-inner">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <span style="font-family:'Space Mono',monospace;font-size:0.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);">Waveform</span>
+        <div class="wave-picker">
+          <button class="wave-opt active" data-wave="sawtooth">SAW</button>
+          <button class="wave-opt" data-wave="square">SQR</button>
+          <button class="wave-opt" data-wave="sine">SIN</button>
+          <button class="wave-opt" data-wave="triangle">TRI</button>
+        </div>
+      </div>
+
+      <div class="knob-group">
+        <label>Attack <span id="atkVal">0.01s</span></label>
+        <input type="range" id="atkKnob" min="0.001" max="0.5" step="0.001" value="0.01">
+      </div>
+
+      <div class="knob-group">
+        <label>Decay <span id="decVal">0.4s</span></label>
+        <input type="range" id="decKnob" min="0.05" max="2.0" step="0.05" value="0.4">
+      </div>
+
+      <div class="knob-group">
+        <label>Filter <span id="filtVal">2000Hz</span></label>
+        <input type="range" id="filtKnob" min="200" max="8000" step="100" value="2000">
+      </div>
+
+      <div class="knob-group">
+        <label>Reverb <span id="revVal">0%</span></label>
+        <input type="range" id="revKnob" min="0" max="1" step="0.01" value="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-bar">
+    <button class="ctrl-btn record">● REC</button>
+    <span class="rec-timer">00:00</span>
+    <button class="ctrl-btn post">↑ Post to Feed</button>
+  </div>
+
+  <div class="sequence-strip">
+    <div class="sequence-events">
+      <span class="seq-empty">— play something to record —</span>
+    </div>
+  </div>
+
+  <section class="instrument-card">
+    <div class="set" id="synthSet"></div>
+  </section>
+
+  <div class="feed-section">
+    <div class="feed-header">Community Feed <span class="feed-count" id="feedCount">0</span></div>
+    <div class="feed-list" id="feedList"></div>
+  </div>
+
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <h3>🎛️ Share Your Synth Track</h3>
+      <input type="hidden" id="postInstrument">
+      <input type="hidden" id="postEmoji">
+      <label>Title</label>
+      <input type="text" id="postTitle" placeholder="Electronic dream...">
+      <label>Your Name</label>
+      <input type="text" id="postAuthor" placeholder="Your name">
+      <label>Description (optional)</label>
+      <textarea id="postDesc" placeholder="What did you make?"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePostModal()">Cancel</button>
+        <button class="btn-post" onclick="submitPost()">Post It ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Efforts by Adab, Harshit, Yashika and Jatin</span>
+    <span>Instrument Playground</span>
+  </footer>
+
+  <script>
+    var audioCtx;
+    var synthWave = 'sawtooth';
+    var synthAtk = 0.01;
+    var synthDec = 0.4;
+    var synthFilt = 2000;
+    var synthRev = 0;
+    var reverbNode = null;
+
+    var synthNotes = [
+      { key: '1', note: 'C4', freq: 261.63 },
+      { key: '2', note: 'D4', freq: 293.66 },
+      { key: '3', note: 'E4', freq: 329.63 },
+      { key: '4', note: 'F4', freq: 349.23 },
+      { key: '5', note: 'G4', freq: 392.00 },
+      { key: '6', note: 'A4', freq: 440.00 },
+      { key: '7', note: 'B4', freq: 493.88 },
+    ];
+
+    // Build keys
+    const set = document.getElementById('synthSet');
+    synthNotes.forEach(n => {
+      const btn = document.createElement('button');
+      btn.className = `${CSS.escape(n.key)} synth-btn`;
+      btn.dataset.key = n.key;
+      btn.innerHTML = `<span class="synth-key">${n.key}</span><span class="synth-note">${n.note}</span><div class="synth-bar"></div>`;
+      set.appendChild(btn);
+    });
+
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function createReverb(ctx, mix) {
+      const convolver = ctx.createConvolver();
+      const len = ctx.sampleRate * 2;
+      const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = buf.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+      }
+      convolver.buffer = buf;
+      return convolver;
+    }
+
+    function makeSound(key) {
+      const note = synthNotes.find(n => n.key === key);
+      if (!note) return;
+      const ctx = getCtx();
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.type = synthWave;
+      osc.frequency.setValueAtTime(note.freq, now);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(synthFilt, now);
+      filter.Q.setValueAtTime(2, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.3, now + synthAtk);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + synthAtk + synthDec);
+
+      osc.connect(filter);
+
+      if (synthRev > 0.01) {
+        const dry = ctx.createGain();
+        const wet = ctx.createGain();
+        const rev = createReverb(ctx);
+        dry.gain.value = 1 - synthRev;
+        wet.gain.value = synthRev;
+        filter.connect(dry); filter.connect(rev);
+        dry.connect(gain); rev.connect(wet); wet.connect(gain);
+      } else {
+        filter.connect(gain);
+      }
+
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + synthAtk + synthDec + 0.05);
+    }
+
+    // Knob wiring
+    document.getElementById('atkKnob').addEventListener('input', function() {
+      synthAtk = parseFloat(this.value);
+      document.getElementById('atkVal').textContent = synthAtk.toFixed(3) + 's';
+    });
+    document.getElementById('decKnob').addEventListener('input', function() {
+      synthDec = parseFloat(this.value);
+      document.getElementById('decVal').textContent = synthDec.toFixed(2) + 's';
+    });
+    document.getElementById('filtKnob').addEventListener('input', function() {
+      synthFilt = parseInt(this.value);
+      document.getElementById('filtVal').textContent = synthFilt + 'Hz';
+    });
+    document.getElementById('revKnob').addEventListener('input', function() {
+      synthRev = parseFloat(this.value);
+      document.getElementById('revVal').textContent = Math.round(synthRev * 100) + '%';
+    });
+
+    document.querySelectorAll('.wave-opt').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.wave-opt').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        synthWave = this.dataset.wave;
+      });
+    });
+  </script>
+  <script src="./shared.js"></script>
+</body>
+</html>

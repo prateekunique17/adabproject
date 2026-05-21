@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guitar Zone · Instrument Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body { --accent: #00e5c0; --accent-glow: rgba(0,229,192,0.10); }
+  </style>
+</head>
+<body data-instrument="guitar" data-emoji="🎸">
+  <div class="glow"></div>
+
+  <nav>
+    <a class="logo" href="./home.html">◎ Instrument Playground</a>
+    <ul class="nav-links">
+      <li><a href="./home.html">Home</a></li>
+      <li><a href="./index (2).html">Drums</a></li>
+      <li><a href="./piano.html">Piano</a></li>
+      <li><a href="./guitar.html" class="active">Guitar</a></li>
+      <li><a href="./synth.html">Synth</a></li>
+    </ul>
+  </nav>
+
+  <header class="page-hero">
+    <span class="page-tag">Instrument Playground</span>
+    <h1>Guitar Zone 🎸</h1>
+    <p>Click strings or press &nbsp;z x c v b n m</p>
+  </header>
+
+  <div class="controls-bar">
+    <button class="ctrl-btn record">● REC</button>
+    <span class="rec-timer">00:00</span>
+    <button class="ctrl-btn post">↑ Post to Feed</button>
+  </div>
+
+  <div class="sequence-strip">
+    <div class="sequence-events">
+      <span class="seq-empty">— play something to record —</span>
+    </div>
+  </div>
+
+  <section class="instrument-card">
+    <div class="set" id="guitarSet"></div>
+  </section>
+
+  <div class="feed-section">
+    <div class="feed-header">Community Feed <span class="feed-count" id="feedCount">0</span></div>
+    <div class="feed-list" id="feedList"></div>
+  </div>
+
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <h3>🎸 Share Your Riff</h3>
+      <input type="hidden" id="postInstrument">
+      <input type="hidden" id="postEmoji">
+      <label>Title</label>
+      <input type="text" id="postTitle" placeholder="Shredding session...">
+      <label>Your Name</label>
+      <input type="text" id="postAuthor" placeholder="Adab">
+      <label>Description (optional)</label>
+      <textarea id="postDesc" placeholder="What did you make?"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closePostModal()">Cancel</button>
+        <button class="btn-post" onclick="submitPost()">Post It ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Efforts by Adab, Harshit and Yashika</span>
+    <span>Instrument Playground</span>
+  </footer>
+
+  <script>
+    var audioCtx;
+
+    // Guitar strings: key, note name, frequency (E2 standard ish, shifted up for audibility)
+    var guitarStrings = [
+      { key: 'z', note: 'E2', freq: 164.81 },
+      { key: 'x', note: 'A2', freq: 220.00 },
+      { key: 'c', note: 'D3', freq: 293.66 },
+      { key: 'v', note: 'G3', freq: 392.00 },
+      { key: 'b', note: 'B3', freq: 493.88 },
+      { key: 'n', note: 'E4', freq: 329.63 },
+      { key: 'm', note: 'A4', freq: 440.00 },
+    ];
+
+    // Build buttons
+    const set = document.getElementById('guitarSet');
+    guitarStrings.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = `${s.key} guitar-btn`;
+      btn.dataset.key = s.key;
+      btn.innerHTML = `
+        <div class="string-visual"></div>
+        <span class="fret-key">${s.key.toUpperCase()}</span>
+        <span class="note-name">${s.note}</span>
+      `;
+      set.appendChild(btn);
+    });
+
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    // Karplus-Strong plucked string synthesis
+    function pluckString(frequency) {
+      const ctx = getCtx();
+      const sampleRate = ctx.sampleRate;
+      const bufLen = Math.round(sampleRate / frequency);
+      const duration = 3;
+
+      // Fill noise buffer
+      const noiseLen = Math.max(bufLen, sampleRate * duration);
+      const buffer = ctx.createBuffer(1, noiseLen, sampleRate);
+      const data = buffer.getChannelData(0);
+
+      // Seed with noise
+      for (let i = 0; i < bufLen; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      // Karplus-Strong averaging filter
+      for (let i = bufLen; i < noiseLen; i++) {
+        data[i] = 0.4995 * (data[i - bufLen] + data[i - bufLen + 1]);
+      }
+
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.9, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      src.start();
+      src.stop(ctx.currentTime + duration);
+    }
+
+    function makeSound(key) {
+      const s = guitarStrings.find(g => g.key === key);
+      if (s) pluckString(s.freq);
+    }
+  </script>
+  <script src="./shared.js"></script>
+</body>
+</html>
